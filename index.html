@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layered Generative Intervention in Deepfake Detection</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --fg: #1a1a1a;
+    --accent: #2E86AB;
+    --accent2: #C73E1D;
+    --card: #ffffff;
+    --border: #e0e0e0;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --section-gap: 3rem;
+    --max-w: 1100px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --fg: #e2e8f0;
+      --card: #1e293b;
+      --border: #334155;
+      --muted: #94a3b8;
+      --code-bg: #1e293b;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Hero ────────────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%);
+    color: #fff;
+    padding: 4rem 2rem 3rem;
+    text-align: center;
+  }
+  .hero h1 { font-size: 2.2rem; font-weight: 700; margin-bottom: 0.6rem; }
+  .hero .subtitle { font-size: 1.15rem; color: #94a3b8; max-width: 750px; margin: 0 auto 1.5rem; }
+  .hero .thesis {
+    font-style: italic; color: #cbd5e1; max-width: 720px; margin: 0 auto 2rem;
+    font-size: 1.02rem; border-left: 3px solid var(--accent); padding-left: 1rem; text-align: left;
+  }
+  .hero-badges { display: flex; gap: 0.8rem; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    padding: 0.55rem 1.3rem; border-radius: 8px; font-weight: 600; font-size: 0.95rem;
+    transition: transform 0.15s;
+  }
+  .badge:hover { transform: translateY(-2px); text-decoration: none; }
+  .badge-primary { background: var(--accent); color: #fff; }
+  .badge-dataset {
+    background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff;
+    font-size: 1.05rem; padding: 0.65rem 1.5rem;
+    box-shadow: 0 4px 14px rgba(245,158,11,0.35);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 4px 14px rgba(245,158,11,0.35); }
+    50% { box-shadow: 0 4px 24px rgba(245,158,11,0.55); }
+  }
+  .badge-outline { border: 1.5px solid #475569; color: #cbd5e1; }
+
+  /* ── Layout ─────────────────────────────────────────────────── */
+  .container { max-width: var(--max-w); margin: 0 auto; padding: 0 1.5rem; }
+  section { padding: var(--section-gap) 0; }
+  section + section { border-top: 1px solid var(--border); }
+  h2 { font-size: 1.6rem; margin-bottom: 0.5rem; }
+  h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; color: var(--accent); }
+  p { margin-bottom: 1rem; }
+
+  /* ── Cards ──────────────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .card-grid { display: grid; gap: 1.2rem; }
+  .card-grid-2 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+  .card-grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .stat { font-size: 2rem; font-weight: 800; color: var(--accent); }
+  .stat-bad { color: var(--accent2); }
+  .stat-label { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; }
+
+  /* ── Plots ──────────────────────────────────────────────────── */
+  .plot-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+  }
+  .plot-wrap img { width: 100%; height: auto; display: block; border-radius: 6px; }
+  .plot-wrap figcaption { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; }
+
+  /* ── Tables ─────────────────────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { padding: 0.55rem 0.8rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.04em; }
+  tr:hover td { background: rgba(46,134,171,0.04); }
+  .highlight-row td { font-weight: 600; background: rgba(46,134,171,0.08); }
+  .mono { font-family: 'SFMono-Regular', Consolas, monospace; font-size: 0.88em; }
+
+  /* ── Key finding callout ────────────────────────────────────── */
+  .callout {
+    background: linear-gradient(135deg, rgba(46,134,171,0.08), rgba(46,134,171,0.03));
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 1.2rem 1.5rem;
+    margin: 1.5rem 0;
+  }
+  .callout-warn {
+    background: linear-gradient(135deg, rgba(199,62,29,0.08), rgba(199,62,29,0.03));
+    border-left-color: var(--accent2);
+  }
+  .callout strong { display: block; margin-bottom: 0.3rem; }
+
+  /* ── TOC ─────────────────────────────────────────────────────── */
+  .toc { list-style: none; }
+  .toc li { padding: 0.3rem 0; }
+  .toc a { font-weight: 500; }
+
+  /* ── Footer ─────────────────────────────────────────────────── */
+  footer {
+    text-align: center; padding: 2rem; color: var(--muted); font-size: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Responsive ─────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 1.5rem; }
+    .hero .subtitle { font-size: 1rem; }
+    .card-grid-2, .card-grid-3 { grid-template-columns: 1fr; }
+    .stat { font-size: 1.5rem; }
+  }
+
+  /* ── Nav / TOC sticky ───────────────────────────────────────── */
+  nav.sticky-nav {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    padding: 0.6rem 0; backdrop-filter: blur(10px);
+  }
+  nav.sticky-nav .container { display: flex; gap: 1.2rem; overflow-x: auto; white-space: nowrap; font-size: 0.85rem; }
+  nav.sticky-nav a { color: var(--muted); font-weight: 500; }
+  nav.sticky-nav a:hover { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- HERO                                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<header class="hero">
+  <h1>Layered Generative Intervention in Deepfake Detection</h1>
+  <p class="subtitle">
+    Decomposing speech authenticity into source identity and processing mediation
+  </p>
+  <div class="thesis">
+    Speech authenticity is compositional, not binary. Modern deepfake detectors operate on
+    degrees of algorithmic mediation rather than on an intrinsic notion of realness.
+  </div>
+  <div class="hero-badges">
+    <a class="badge badge-dataset" href="https://zenodo.org/records/18803182" target="_blank" rel="noopener">
+      📦 Dataset on Zenodo
+    </a>
+    <a class="badge badge-primary" href="#key-finding">Core Finding: 300× EER Gap</a>
+    <a class="badge badge-outline" href="#experiments">All Experiments</a>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- STICKY NAV                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<nav class="sticky-nav">
+  <div class="container">
+    <a href="#overview">Overview</a>
+    <a href="#dataset">Dataset</a>
+    <a href="#key-finding">Key Finding</a>
+    <a href="#training">Training</a>
+    <a href="#confusion-matrices">Confusion Matrices</a>
+    <a href="#eer">EER Analysis</a>
+    <a href="#benign">Benign Transforms</a>
+    <a href="#experiments">Experiment Details</a>
+    <a href="#reproducibility">Reproducibility</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- OVERVIEW                                                                 -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="overview">
+  <div class="container">
+    <h2>Overview</h2>
+    <p>
+      We challenge the binary "real vs. fake" framing of deepfake speech detection.
+      Speech can undergo <strong>multiple layers of generative processing</strong> — TTS synthesis, voice conversion,
+      voice quality modification — and each layer adds algorithmic mediation. We define
+      <strong>four intervention depths</strong> and show that what detectors actually learn is
+      processing depth, not source identity.
+    </p>
+
+    <div class="card-grid card-grid-3" style="margin-top:1.5rem;">
+      <div class="card" style="text-align:center;">
+        <div class="stat">300×</div>
+        <div class="stat-label">EER Gap: Source vs. Mediation</div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+          Same model, same data — mediation detection generalizes,<br>source detection does not.
+        </p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="stat">99.5%</div>
+        <div class="stat-label">Cross-Domain Mediation Accuracy</div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+          Processing detection works on completely unseen data (ASVspoof5).
+        </p>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="stat stat-bad">46.3%</div>
+        <div class="stat-label">Source EER on ASVspoof5</div>
+        <p style="font-size:0.88rem;color:var(--muted);margin-top:0.5rem;">
+          Same model cannot distinguish real from fake — near chance level.
+        </p>
+      </div>
+    </div>
+
+    <h3>Four Intervention Depths</h3>
+    <table>
+      <thead><tr><th>Class</th><th>Label</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Real</strong></td><td>0</td><td>Original human recordings — no processing</td></tr>
+        <tr><td><strong>Real→Conv</strong></td><td>1</td><td>Human audio processed through voice conversion</td></tr>
+        <tr><td><strong>Fake</strong></td><td>2</td><td>Raw TTS output — synthesis only</td></tr>
+        <tr><td><strong>Fake→Conv</strong></td><td>3</td><td>TTS output + voice conversion — two layers of processing</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- DATASET                                                                  -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="dataset">
+  <div class="container">
+    <h2>📦 Dataset</h2>
+
+    <div class="callout" style="margin-bottom:1.5rem;">
+      <strong>Download our dataset</strong>
+      All training data, embeddings, and evaluation splits are available on Zenodo:<br>
+      <a href="https://zenodo.org/records/18803182" target="_blank" rel="noopener" style="font-size:1.1rem;font-weight:700;">
+        https://zenodo.org/records/18803182
+      </a>
+    </div>
+
+    <figure class="plot-wrap">
+      <img src="plots/dataset_overview.svg" alt="Dataset composition">
+      <figcaption>Figure 1: Training (MLAAD) and evaluation (ASVspoof5) dataset composition across the four intervention depth classes.</figcaption>
+    </figure>
+
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">MLAAD — Training &amp; Primary Evaluation</h3>
+        <table>
+          <thead><tr><th>Split</th><th>Per-Class</th><th>Total</th><th>Architectures</th></tr></thead>
+          <tbody>
+            <tr><td>Train</td><td>4,827</td><td>19,308</td><td>9 seen</td></tr>
+            <tr><td>Validation</td><td>762</td><td>3,048</td><td>9 seen</td></tr>
+            <tr><td>Test (seen)</td><td>1,365</td><td>5,460</td><td>9 seen</td></tr>
+            <tr><td>Test (unseen)</td><td>257</td><td>1,028</td><td>OuteTTS only</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem;color:var(--muted);">
+          10 TTS architectures total. Splitting is utterance-level (no leakage). Voice conversion via FireRedTTS-2.0.
+        </p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">ASVspoof5 — Cross-Domain Evaluation</h3>
+        <table>
+          <thead><tr><th>Category</th><th>Samples</th></tr></thead>
+          <tbody>
+            <tr><td>Real</td><td>14,171</td></tr>
+            <tr><td>Real→Conv</td><td>~56,684</td></tr>
+            <tr><td>Fake</td><td>54,017</td></tr>
+            <tr><td>Fake→Conv</td><td>~78,601</td></tr>
+            <tr class="highlight-row"><td><strong>Total</strong></td><td><strong>~203,473</strong></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem;color:var(--muted);">
+          Completely independent from MLAAD training data. Includes modal, breathy, creaky, and end-creak voice qualities.
+        </p>
+      </div>
+    </div>
+
+    <h3>TTS Architectures</h3>
+    <table>
+      <thead><tr><th>Architecture</th><th>Role</th><th>Converted Files</th><th>Raw TTS</th></tr></thead>
+      <tbody>
+        <tr><td>FireRedTTS-2.0</td><td>Train/Val/Test</td><td>2,072</td><td>1,001</td></tr>
+        <tr><td>Higgs-Audio-V2</td><td>Train/Val/Test</td><td>2,024</td><td>1,001</td></tr>
+        <tr><td>Index-TTS-2.0</td><td>Train/Val/Test</td><td>1,984</td><td>1,001</td></tr>
+        <tr><td>Llasa-1B</td><td>Train/Val/Test</td><td>2,040</td><td>1,001</td></tr>
+        <tr><td>MiniCPM-o-2.6</td><td>Train/Val/Test</td><td>2,232</td><td>1,001</td></tr>
+        <tr><td>Openaudio-S1-Mini</td><td>Train/Val/Test</td><td>2,080</td><td>1,002</td></tr>
+        <tr><td>VoxCPM-0.5B</td><td>Train/Val/Test</td><td>2,248</td><td>1,001</td></tr>
+        <tr><td>Voxtream</td><td>Train/Val/Test</td><td>1,904</td><td>1,001</td></tr>
+        <tr><td>ZipVoice</td><td>Train/Val/Test</td><td>1,960</td><td>1,001</td></tr>
+        <tr class="highlight-row"><td><strong>OuteTTS</strong></td><td><strong>Unseen Test Only</strong></td><td>2,056</td><td>1,001</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- KEY FINDING                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="key-finding">
+  <div class="container">
+    <h2>Core Finding: The 300× EER Gap</h2>
+
+    <div class="callout">
+      <strong>The same model, on the same data, with the same predictions</strong>
+      The DF-Arena 4-Way classifier evaluated on ASVspoof5 achieves 0.15% EER when measuring <em>mediation</em>
+      (processed vs. unprocessed) but 46.3% EER when measuring <em>source identity</em> (real vs. fake).
+      This 300× gap proves deepfake detectors learn processing signatures, not authenticity.
+    </div>
+
+    <figure class="plot-wrap">
+      <img src="plots/decomposition_hero.svg" alt="Source vs Mediation decomposition — 300x EER gap">
+      <figcaption>Figure 2: The core decomposition result. When the same 4-way model's predictions are
+        collapsed along the source axis vs. the mediation axis, a 300× EER gap emerges. Mediation detection
+        generalizes perfectly; source detection is at chance level.</figcaption>
+    </figure>
+
+    <table>
+      <thead><tr><th>Collapse Axis</th><th>ASVspoof5 Accuracy</th><th>EER</th><th>Interpretation</th></tr></thead>
+      <tbody>
+        <tr><td>4-way (full)</td><td>49.4%</td><td>—</td><td>Near chance</td></tr>
+        <tr><td>Binary (source: real vs fake)</td><td>49.9%</td><td>46.3%</td><td>Cannot tell real from fake</td></tr>
+        <tr class="highlight-row"><td><strong>Mediation (processed/unprocessed)</strong></td><td><strong>99.5%</strong></td><td><strong>0.15%</strong></td><td>Near-perfect processing detection</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- TRAINING CURVES                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="training">
+  <div class="container">
+    <h2>Training &amp; Validation Curves</h2>
+    <p>
+      All DF-Arena fine-tuning experiments with train/validation loss and accuracy per epoch.
+      Models were fine-tuned from the DF-Arena 1B Wav2Vec2 backbone with a learning rate of 1e-5
+      and early stopping based on validation loss.
+    </p>
+
+    <figure class="plot-wrap">
+      <img src="plots/training_curves.svg" alt="Training and validation curves for all DF-Arena experiments">
+      <figcaption>Figure 3: Training and validation loss (top) and accuracy (bottom) for all four DF-Arena
+        fine-tuning experiments. Note the validation loss instability on the +Sidon and Mixed experiments,
+        indicating domain shift challenges. Best checkpoints were selected by lowest validation loss.</figcaption>
+    </figure>
+
+    <h3>Training Details</h3>
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">DF-Arena Binary (MLAAD)</h3>
+        <table>
+          <tr><td>Epochs</td><td class="mono">10</td></tr>
+          <tr><td>Best Val Loss</td><td class="mono">0.0293 (epoch 10)</td></tr>
+          <tr><td>Best Val Acc</td><td class="mono">99.15%</td></tr>
+          <tr><td>Train Loss (final)</td><td class="mono">0.0350</td></tr>
+          <tr><td>Learning Rate</td><td class="mono">1e-5</td></tr>
+          <tr><td>Batch Size</td><td class="mono">16</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">DF-Arena Binary (MLAAD+ASVspoof5)</h3>
+        <table>
+          <tr><td>Epochs</td><td class="mono">13</td></tr>
+          <tr><td>Best Val Loss</td><td class="mono">0.1850 (epoch 5)</td></tr>
+          <tr><td>Best Val Acc</td><td class="mono">92.13%</td></tr>
+          <tr><td>Train Loss (final)</td><td class="mono">0.1071</td></tr>
+          <tr><td>Learning Rate</td><td class="mono">1e-5</td></tr>
+          <tr><td>Batch Size</td><td class="mono">16</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">DF-Arena Binary (+Sidon)</h3>
+        <table>
+          <tr><td>Epochs</td><td class="mono">14</td></tr>
+          <tr><td>Best Val Loss</td><td class="mono">0.2155 (epoch 6)</td></tr>
+          <tr><td>Best Val Acc</td><td class="mono">92.29%</td></tr>
+          <tr><td>Train Loss (final)</td><td class="mono">0.0898</td></tr>
+          <tr><td>Learning Rate</td><td class="mono">1e-5</td></tr>
+          <tr><td>Batch Size</td><td class="mono">16</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">DF-Arena 4-Way (+Sidon)</h3>
+        <table>
+          <tr><td>Epochs</td><td class="mono">20</td></tr>
+          <tr><td>Best Val Loss</td><td class="mono">0.1974 (epoch 14)</td></tr>
+          <tr><td>Best Val Acc</td><td class="mono">92.59%</td></tr>
+          <tr><td>Train Loss (final)</td><td class="mono">0.0692</td></tr>
+          <tr><td>Learning Rate</td><td class="mono">1e-5</td></tr>
+          <tr><td>Batch Size</td><td class="mono">16</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- CONFUSION MATRICES                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="confusion-matrices">
+  <div class="container">
+    <h2>Confusion Matrices</h2>
+
+    <h3>MLP 4-Way Intervention Depth Classifier</h3>
+    <p>
+      The MLP operates on concatenated SSL embeddings (HuBERT + Whisper + Wav2Vec2 XLS-R, 2816-dim).
+      Confusion is exclusively between voice-converted classes (Real→Conv vs Fake→Conv), confirming that
+      voice conversion obscures source identity while processing detection remains robust.
+    </p>
+    <figure class="plot-wrap">
+      <img src="plots/cm_mlp_4way.svg" alt="MLP 4-Way confusion matrices">
+      <figcaption>Figure 4: MLP 4-way classifier on MLAAD seen architectures (99.0%), unseen OuteTTS (89.6%),
+        and cross-domain ASVspoof5 (43.5%). Note: confusion on unseen data is exclusively between
+        Real→Conv and Fake→Conv.</figcaption>
+    </figure>
+
+    <h3>DF-Arena 4-Way — MLAAD Evaluation</h3>
+    <figure class="plot-wrap">
+      <img src="plots/cm_dfarena_4way.svg" alt="DF-Arena 4-Way confusion matrices on MLAAD">
+      <figcaption>Figure 5: DF-Arena 4-way (MLAAD-only) on seen (98.9%), unseen (98.1%), and ASVspoof5 (49.4%).
+        In-domain performance is excellent; cross-domain collapses to chance.</figcaption>
+    </figure>
+
+    <h3>DF-Arena 4-Way — Training Data Progression on ASVspoof5</h3>
+    <p>
+      Adding ASVspoof5 training data ("Mixed") dramatically improves cross-domain performance.
+      Further adding Sidon-enhanced data provides a small additional boost.
+    </p>
+    <figure class="plot-wrap">
+      <img src="plots/cm_dfarena_4way_progression.svg" alt="DF-Arena 4-Way progression on ASVspoof5">
+      <figcaption>Figure 6: Cross-domain performance on ASVspoof5 improves from 49.4% (MLAAD-only) to
+        86.8% (Mixed) to 87.2% (+Sidon) as training data diversity increases.</figcaption>
+    </figure>
+
+    <h3>DF-Arena Binary</h3>
+    <figure class="plot-wrap">
+      <img src="plots/cm_dfarena_binary.svg" alt="DF-Arena Binary confusion matrices">
+      <figcaption>Figure 7: DF-Arena binary classifiers. MLAAD in-domain (98.4%), Mixed on ASVspoof5 (83.7%),
+        and +Sidon on Sidon test set (89.9%).</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- EER ANALYSIS                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="eer">
+  <div class="container">
+    <h2>EER Analysis</h2>
+
+    <div class="callout-warn callout">
+      <strong>Accuracy can be deceptive</strong>
+      DF-Arena binary achieves 94.9% accuracy on ASVspoof5, but its EER is 44.2% — near chance.
+      The high accuracy comes from labeling everything processed as "fake," which works when most
+      ASVspoof5 samples are processed. EER reveals the true real/fake separation capability.
+    </div>
+
+    <figure class="plot-wrap">
+      <img src="plots/eer_comparison.svg" alt="Source vs Mediation EER comparison">
+      <figcaption>Figure 8: (Left) Source vs. Mediation EER for 4-way models on ASVspoof5 — mediation EER is
+        near-zero in all cases. (Right) Source EER across all experimental configurations.</figcaption>
+    </figure>
+
+    <figure class="plot-wrap">
+      <img src="plots/eer_heatmap.svg" alt="EER heatmap across all experiments">
+      <figcaption>Figure 9: Comprehensive EER heatmap across all model configurations and evaluation datasets.
+        Green = good (low EER), Red = poor (high EER). Mediation-based detection consistently achieves
+        near-zero EER even cross-domain.</figcaption>
+    </figure>
+
+    <h3>EER Summary Table</h3>
+    <table>
+      <thead><tr><th>Experiment</th><th>Dataset</th><th>Accuracy</th><th>EER</th><th>Insight</th></tr></thead>
+      <tbody>
+        <tr><td>DF-Arena binary (pretrained)</td><td>ASVspoof5</td><td>94.9%</td><td>44.2%</td><td>High accuracy masks poor separation</td></tr>
+        <tr><td>DF-Arena binary (MLAAD, unprocessed)</td><td>MLAAD</td><td>97.5%</td><td>0.05%</td><td>Near-perfect on unprocessed only</td></tr>
+        <tr><td>DF-Arena binary (MLAAD, all)</td><td>MLAAD</td><td>56.2%</td><td>50.9%</td><td>Chance when converted-real = bonafide</td></tr>
+        <tr class="highlight-row"><td><strong>DF-Arena 4-way (mediation)</strong></td><td>ASVspoof5</td><td><strong>99.5%</strong></td><td><strong>0.15%</strong></td><td>Processing detection generalizes</td></tr>
+        <tr><td>DF-Arena 4-way (source)</td><td>ASVspoof5</td><td>49.9%</td><td>46.3%</td><td>Source detection does not</td></tr>
+        <tr><td>Binary MLP</td><td>ASVspoof5</td><td>48.0%</td><td>54.7%</td><td>Worse than random</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- CROSS-DOMAIN PROGRESSION                                                 -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="progression">
+  <div class="container">
+    <h2>Cross-Domain Progression</h2>
+    <p>
+      Performance on ASVspoof5 improves as training data diversity increases. The key driver is
+      adding in-domain voice conversion examples, which dramatically reduces source EER.
+    </p>
+    <figure class="plot-wrap">
+      <img src="plots/progression.svg" alt="Cross-domain progression metrics">
+      <figcaption>Figure 10: Accuracy and EER progression on ASVspoof5 as training data evolves
+        from MLAAD-only to Mixed to +Sidon. Mediation-based metrics remain near-perfect throughout.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- BENIGN TRANSFORMS                                                        -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="benign">
+  <div class="container">
+    <h2>Benign Transformation Analysis</h2>
+    <p>
+      <strong>Sidon</strong> is a non-adversarial speech enhancement model. Applying it to genuine human speech
+      should not change detector labels — but it does. This demonstrates that detectors are sensitive to
+      any generative processing, not just adversarial manipulation.
+    </p>
+
+    <figure class="plot-wrap">
+      <img src="plots/sidon_flips.svg" alt="Sidon benign transform — prediction flip rates">
+      <figcaption>Figure 11: Prediction flip rates after Sidon speech enhancement. DF-Arena Binary labels
+        79.5% of enhanced real speech as "fake" — a non-adversarial transform triggers the detector.
+        The SSL-ensemble MLP is 8× more robust.</figcaption>
+    </figure>
+
+    <figure class="plot-wrap">
+      <img src="plots/processing_spectrum.svg" alt="Processing spectrum — detector sensitivity">
+      <figcaption>Figure 12: Detector sensitivity across the processing spectrum. Even benign enhancement
+        is enough to trigger false positives, establishing a continuum from unprocessed to fully synthetic.</figcaption>
+    </figure>
+
+    <figure class="plot-wrap">
+      <img src="plots/subset_classifiers.svg" alt="Subset classifier seen vs unseen accuracy">
+      <figcaption>Figure 13: Subset binary classifiers — seen vs. unseen accuracy. The unconverted classifier
+        generalizes perfectly (99.6%), but voice-converted subsets show 15–24% degradation on unseen TTS.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- EXPERIMENT DETAILS                                                       -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="experiments">
+  <div class="container">
+    <h2>Experiment Details</h2>
+
+    <h3>Model Architectures</h3>
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">MLP Classifiers (SSL Ensemble)</h3>
+        <table>
+          <tr><td>Backbone</td><td>HuBERT + Whisper + Wav2Vec2 XLS-R</td></tr>
+          <tr><td>Input Dim</td><td class="mono">2,816</td></tr>
+          <tr><td>Hidden Layers</td><td class="mono">512 → 256</td></tr>
+          <tr><td>Activation</td><td>ReLU + Dropout(0.3)</td></tr>
+          <tr><td>Output</td><td>4-way (intervention depth) or 2-way (binary)</td></tr>
+          <tr><td>Optimizer</td><td>Adam, lr=1e-3</td></tr>
+          <tr><td>Audio</td><td>Mono, 16 kHz, max 30s</td></tr>
+          <tr><td>Pooling</td><td>Mean over time dimension</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">DF-Arena (Fine-Tuned)</h3>
+        <table>
+          <tr><td>Backbone</td><td>Wav2Vec2 XLS-R 1B</td></tr>
+          <tr><td>Parameters</td><td class="mono">~1B</td></tr>
+          <tr><td>Fine-Tuning</td><td>Full model, lr=1e-5</td></tr>
+          <tr><td>Output Heads</td><td>4-way or Binary</td></tr>
+          <tr><td>Optimizer</td><td>AdamW</td></tr>
+          <tr><td>Scheduler</td><td>Linear warmup + cosine annealing</td></tr>
+          <tr><td>Batch Size</td><td class="mono">16</td></tr>
+          <tr><td>Checkpoint</td><td>Best validation loss</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>SSL Embedding Extraction</h3>
+    <table>
+      <thead><tr><th>Model</th><th>Dimensionality</th><th>Parameters</th></tr></thead>
+      <tbody>
+        <tr><td>HuBERT-base (<code>facebook/hubert-base-ls960</code>)</td><td class="mono">768</td><td class="mono">90M</td></tr>
+        <tr><td>Whisper-small (<code>openai/whisper-small</code>)</td><td class="mono">768</td><td class="mono">244M</td></tr>
+        <tr><td>Wav2Vec2 XLS-R 1B (<code>facebook/wav2vec2-xls-r-1b</code>)</td><td class="mono">1,280</td><td class="mono">1B</td></tr>
+        <tr class="highlight-row"><td><strong>Combined (concatenated)</strong></td><td class="mono"><strong>2,816</strong></td><td></td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:0.88rem;color:var(--muted);">
+      Extraction via 4× GPU parallel (<code>ThreadPoolExecutor</code>). Audio: mono, 16 kHz, max 30s (padded/truncated).
+      Mean pooling over time → single vector per utterance. Cached as pickle files.
+    </p>
+
+    <h3>Complete Experiment Summary</h3>
+    <table>
+      <thead><tr><th>#</th><th>Experiment</th><th>Model</th><th>Training Data</th><th>In-Domain Acc</th><th>Cross-Domain (ASVspoof5)</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>4-Way MLP</td><td>SSL MLP</td><td>MLAAD (9 arch)</td><td>99.0%</td><td>43.5%</td></tr>
+        <tr><td>2</td><td>Binary MLP</td><td>SSL MLP</td><td>MLAAD</td><td>99.1%</td><td>48.0% (EER 54.7%)</td></tr>
+        <tr><td>3</td><td>Subset Classifiers</td><td>SSL MLP</td><td>MLAAD subsets</td><td>97–100%</td><td>—</td></tr>
+        <tr><td>5</td><td>DF-Arena Baseline</td><td>DF-Arena 1B</td><td>Pre-trained</td><td>—</td><td>94.9% (EER 44.2%)</td></tr>
+        <tr><td>8</td><td>DF-Arena 4-Way</td><td>DF-Arena FT</td><td>MLAAD</td><td>98.9%</td><td>49.4%</td></tr>
+        <tr><td>10</td><td>DF-Arena 4-Way Mixed</td><td>DF-Arena FT</td><td>MLAAD+ASV</td><td>—</td><td>86.8%</td></tr>
+        <tr><td>11</td><td>DF-Arena Binary</td><td>DF-Arena FT</td><td>MLAAD</td><td>98.4%</td><td>—</td></tr>
+        <tr><td>12</td><td>DF-Arena 4-Way +Sidon</td><td>DF-Arena FT</td><td>MLAAD+ASV+Sidon</td><td>—</td><td>87.2%</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- REPRODUCIBILITY                                                          -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="reproducibility">
+  <div class="container">
+    <h2>Reproducibility</h2>
+
+    <div class="callout">
+      <strong>All data, models, and code are available</strong>
+      Our dataset is on <a href="https://zenodo.org/records/18803182" target="_blank" rel="noopener">Zenodo</a>.
+      Training scripts, evaluation pipelines, and pre-computed embeddings are included.
+    </div>
+
+    <h3>Validation Loss Curves — Convergence Analysis</h3>
+    <p>
+      All models show clear convergence behavior. The validation curves exhibit some instability on
+      mixed-domain training (expected due to distribution shift), but final checkpoints are selected by
+      best validation loss to mitigate overfitting.
+    </p>
+
+    <table>
+      <thead><tr><th>Model</th><th>Epochs</th><th>Best Val Loss</th><th>Best Epoch</th><th>Final Train Loss</th><th>Overfit Gap</th></tr></thead>
+      <tbody>
+        <tr><td>DF-Arena Binary (MLAAD)</td><td class="mono">10</td><td class="mono">0.0293</td><td class="mono">10</td><td class="mono">0.0350</td><td class="mono">0.006</td></tr>
+        <tr><td>DF-Arena Binary (Mixed)</td><td class="mono">13</td><td class="mono">0.1850</td><td class="mono">5</td><td class="mono">0.1071</td><td class="mono">0.078</td></tr>
+        <tr><td>DF-Arena Binary (+Sidon)</td><td class="mono">14</td><td class="mono">0.2155</td><td class="mono">6</td><td class="mono">0.0898</td><td class="mono">0.126</td></tr>
+        <tr><td>DF-Arena 4-Way (+Sidon)</td><td class="mono">20</td><td class="mono">0.1974</td><td class="mono">14</td><td class="mono">0.0692</td><td class="mono">0.128</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Key Hyperparameters</h3>
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">MLP Training</h3>
+        <ul style="list-style: none; padding: 0;">
+          <li><strong>Optimizer:</strong> Adam (lr=1e-3, default betas)</li>
+          <li><strong>Loss:</strong> CrossEntropyLoss</li>
+          <li><strong>Epochs:</strong> 100 (early stopping, patience=10)</li>
+          <li><strong>Batch size:</strong> 256</li>
+          <li><strong>Dropout:</strong> 0.3</li>
+          <li><strong>Hidden dims:</strong> 512 → 256</li>
+          <li><strong>Seed:</strong> 42</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;">DF-Arena Fine-Tuning</h3>
+        <ul style="list-style: none; padding: 0;">
+          <li><strong>Optimizer:</strong> AdamW (lr=1e-5)</li>
+          <li><strong>Loss:</strong> CrossEntropyLoss</li>
+          <li><strong>Scheduler:</strong> Linear warmup + cosine annealing</li>
+          <li><strong>Batch size:</strong> 16</li>
+          <li><strong>Max epochs:</strong> 10–20</li>
+          <li><strong>Checkpoint:</strong> Best validation loss</li>
+          <li><strong>GPUs:</strong> Multi-GPU (DataParallel)</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3>Evaluation Protocol</h3>
+    <ul>
+      <li><strong>Utterance-level splitting:</strong> No utterance appears in both train and test.</li>
+      <li><strong>Architecture held-out:</strong> OuteTTS is never in training; used only for unseen generalization tests.</li>
+      <li><strong>Cross-domain:</strong> ASVspoof5 is completely independent from MLAAD — different speakers, different TTS systems, different recording conditions.</li>
+      <li><strong>EER computation:</strong> Equal Error Rate where FAR = FRR, computed from calibrated scores. Used over accuracy as the primary anti-spoofing metric per ASVspoof conventions.</li>
+      <li><strong>Mediation axis:</strong> 4-way predictions collapsed to binary (unprocessed vs. processed): {Real, Fake} → Unprocessed; {Real→Conv, Fake→Conv} → Processed.</li>
+      <li><strong>Source axis:</strong> 4-way predictions collapsed to binary (real vs. fake): {Real, Real→Conv} → Real; {Fake, Fake→Conv} → Fake.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- KEY FINDINGS SUMMARY                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<section id="findings">
+  <div class="container">
+    <h2>Key Findings Summary</h2>
+    <div class="card-grid card-grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">1. Detectors Learn Mediation, Not Source</h3>
+        <p>The 300× EER gap (46.3% → 0.15%) on the same model proves detectors measure processing
+        depth, not whether audio is human or synthetic.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">2. Voice Conversion Collapses Source Identity</h3>
+        <p>Confusion is exclusively between Real→Conv and Fake→Conv. Once voice-converted, the
+        source origin becomes undetectable.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">3. Accuracy Is Deceptive</h3>
+        <p>DF-Arena reports 94.9% accuracy on ASVspoof5 but has 44.2% EER — near chance for
+        real/fake separation. High accuracy comes from labeling all processed audio as "fake."</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">4. Benign Transforms Break Detection</h3>
+        <p>Non-adversarial speech enhancement (Sidon) causes 79.5% of real speech to be
+        labeled as fake by DF-Arena. Any generative processing triggers false positives.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">5. Unconverted Detection Is Solved</h3>
+        <p>Distinguishing raw human speech from raw TTS is trivial (99.6% unseen accuracy).
+        The difficulty lies entirely in the converted domain.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--accent);">6. Cross-Domain Generalization Fails</h3>
+        <p>Models trained on MLAAD achieve 99% in-domain but ~48% on ASVspoof5 for source
+        detection. They learn architecture-specific artifacts, not universal real/fake features.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<footer>
+  <div class="container">
+    <p>
+      <a href="https://zenodo.org/records/18803182" target="_blank" rel="noopener" style="font-weight:600;">
+        📦 Dataset on Zenodo
+      </a>
+      &nbsp;·&nbsp;
+      Layered Generative Intervention in Deepfake Detection &nbsp;·&nbsp; 2026
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
