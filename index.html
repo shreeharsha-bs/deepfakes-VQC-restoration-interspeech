@@ -86,6 +86,11 @@
     margin-top: 0.5rem;
   }
 
+  details summary { cursor: pointer; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
+  details summary::before { content: '\25B6\00a0'; font-size: 0.8em; }
+  details[open] summary::before { content: '\25BC\00a0'; }
+
   footer {
     text-align: center;
     padding: 2rem 1.5rem;
@@ -112,8 +117,8 @@
 <nav>
   <a href="#overview">Overview</a>
   <a href="#dataset">Dataset</a>
-  <a href="#embeddings">Embeddings</a>
   <a href="#confusion-matrices">Confusion Matrices</a>
+  <a href="#embeddings">Embeddings</a>
 </nav>
 
 <section id="overview">
@@ -143,48 +148,6 @@
         https://zenodo.org/records/18803182
       </a>
     </p>
-  </div>
-</section>
-
-<section id="embeddings">
-  <div class="container">
-    <h2>SSL Embedding Visualizations</h2>
-    <p>
-      t-SNE and PCA projections of the SSL embeddings used for classification.
-      Three models &mdash; HuBERT-base (768-dim), Whisper-small (768-dim), and
-      Wav2Vec2 XLS-R 1B (1280-dim) &mdash; are concatenated to form 2816-dim representations.
-    </p>
-
-    <h3>t-SNE &mdash; All Three Models Compared</h3>
-    <figure>
-      <img src="plots/ssl_tsne_comparison.png" alt="t-SNE comparison across HuBERT, Whisper, and Wav2Vec2">
-      <figcaption>t-SNE projections across all three SSL models. Each point is one utterance,
-        colored by intervention depth class. Voice-converted classes overlap substantially,
-        while Real and Fake clusters remain well-separated.</figcaption>
-    </figure>
-
-    <h3>PCA &mdash; All Three Models Compared</h3>
-    <figure>
-      <img src="plots/ssl_pca_comparison.png" alt="PCA comparison across HuBERT, Whisper, and Wav2Vec2">
-      <figcaption>PCA projections (first two principal components) across all three SSL models.</figcaption>
-    </figure>
-
-    <h3>Individual t-SNE Projections</h3>
-
-    <figure>
-      <img src="plots/hubert_tsne.png" alt="HuBERT t-SNE">
-      <figcaption>HuBERT-base (facebook/hubert-base-ls960) &mdash; 768-dim embeddings.</figcaption>
-    </figure>
-
-    <figure>
-      <img src="plots/whisper_tsne.png" alt="Whisper t-SNE">
-      <figcaption>Whisper-small (openai/whisper-small) &mdash; 768-dim embeddings.</figcaption>
-    </figure>
-
-    <figure>
-      <img src="plots/wav2vec2_tsne.png" alt="Wav2Vec2 XLS-R 1B t-SNE">
-      <figcaption>Wav2Vec2 XLS-R 1B (facebook/wav2vec2-xls-r-1b) &mdash; 1280-dim embeddings.</figcaption>
-    </figure>
   </div>
 </section>
 
@@ -230,6 +193,46 @@
       <img src="plots/cm_dfarena_binary.svg" alt="DF-Arena Binary confusion matrices">
       <figcaption>DF-Arena Binary: MLAAD fine-tuned (98.4%), Mixed on ASVspoof5 (83.7%), +Sidon on Sidon test set (89.9%).</figcaption>
     </figure>
+  </div>
+</section>
+
+<section id="embeddings">
+  <div class="container">
+    <details>
+      <summary><h2 style="display:inline;">SSL Embedding Visualizations</h2></summary>
+      <p style="margin-top:1rem;">
+        t-SNE and PCA projections of the SSL embeddings used for classification.
+        Three models &mdash; HuBERT-base (768-dim), Whisper-small (768-dim), and
+        Wav2Vec2 XLS-R 1B (1280-dim) &mdash; are concatenated to form 2816-dim representations.
+      </p>
+
+      <h3>t-SNE &mdash; All Three Models Compared</h3>
+      <figure>
+        <img src="plots/ssl_tsne_comparison.png" alt="t-SNE comparison across HuBERT, Whisper, and Wav2Vec2">
+        <figcaption>t-SNE projections across all three SSL models. Voice-converted classes overlap substantially,
+          while Real and Fake clusters remain well-separated.</figcaption>
+      </figure>
+
+      <h3>PCA &mdash; All Three Models Compared</h3>
+      <figure>
+        <img src="plots/ssl_pca_comparison.png" alt="PCA comparison across HuBERT, Whisper, and Wav2Vec2">
+        <figcaption>PCA projections (first two principal components) across all three SSL models.</figcaption>
+      </figure>
+
+      <h3>Individual t-SNE Projections</h3>
+      <figure>
+        <img src="plots/hubert_tsne.png" alt="HuBERT t-SNE">
+        <figcaption>HuBERT-base (facebook/hubert-base-ls960) &mdash; 768-dim.</figcaption>
+      </figure>
+      <figure>
+        <img src="plots/whisper_tsne.png" alt="Whisper t-SNE">
+        <figcaption>Whisper-small (openai/whisper-small) &mdash; 768-dim.</figcaption>
+      </figure>
+      <figure>
+        <img src="plots/wav2vec2_tsne.png" alt="Wav2Vec2 XLS-R 1B t-SNE">
+        <figcaption>Wav2Vec2 XLS-R 1B (facebook/wav2vec2-xls-r-1b) &mdash; 1280-dim.</figcaption>
+      </figure>
+    </details>
   </div>
 </section>
 
