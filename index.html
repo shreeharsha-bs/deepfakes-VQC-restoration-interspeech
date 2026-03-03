@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Layered Generative Intervention in Deepfake Detection</title>
+<title>What Counts as Real? Speech Restoration and Voice Quality Conversion Pose New Challenges to Deepfake Detection</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -102,30 +102,24 @@
 <body>
 
 <header>
-  <h1>Layered Generative Intervention in Deepfake Detection</h1>
+  <h1>What Counts as Real? Speech Restoration and Voice Quality Conversion Pose New Challenges to Deepfake Detection</h1>
   <p class="subtitle">Decomposing speech authenticity into source identity and processing mediation</p>
   <div class="thesis">
-    Speech authenticity is compositional, not binary. Modern deepfake detectors operate on
-    degrees of algorithmic mediation rather than on an intrinsic notion of realness.
+    Audio anti-spoofing systems are typically formulated as binary classifiers distinguishing bonafide from spoofed speech. This assumption fails under layered generative processing, where benign transformations introduce distributional shifts that are misclassified as spoofing. We show that phonation-modifying voice conversion and speech restoration are treated as out-of-distribution despite preserving speaker authenticity. Using a multi-class setup separating bonafide, converted, spoofed, and converted-spoofed speech, we analyse model behaviour through self-supervised learning (SSL) embeddings and acoustic correlates. The benign transformations induce a drift in the SSL space, compressing bonafide and spoofed speech and reducing classifier separability. Reformulating anti-spoofing as a multi-class problem improves robustness to benign shifts while preserving spoof detection, suggesting binary systems model the distribution of raw speech rather than authenticity itself.
   </div>
 </header>
 
 <nav>
   <a href="#overview">Overview</a>
   <a href="#dataset">Dataset</a>
+  <a href="#embeddings">Embeddings</a>
   <a href="#confusion-matrices">Confusion Matrices</a>
 </nav>
 
 <section id="overview">
   <div class="container">
     <h2>Overview</h2>
-    <p>
-      We challenge the binary &ldquo;real vs. fake&rdquo; framing of deepfake speech detection.
-      Speech can undergo <strong>multiple layers of generative processing</strong> &mdash; TTS synthesis,
-      voice conversion, voice quality modification &mdash; and each layer adds algorithmic mediation.
-      We define <strong>four intervention depths</strong> and show that what current detectors
-      actually learn is processing depth, not source identity.
-    </p>
+
 
     <h3>Four Intervention Depths</h3>
     <table>
@@ -144,11 +138,53 @@
   <div class="container">
     <h2>Dataset</h2>
     <p>
-      All training data, embeddings, and evaluation splits are available on Zenodo:<br>
+      All data available on Zenodo:<br>
       <a href="https://zenodo.org/records/18803182" target="_blank" rel="noopener" style="font-size:1.1rem; font-weight:700;">
         https://zenodo.org/records/18803182
       </a>
     </p>
+  </div>
+</section>
+
+<section id="embeddings">
+  <div class="container">
+    <h2>SSL Embedding Visualizations</h2>
+    <p>
+      t-SNE and PCA projections of the SSL embeddings used for classification.
+      Three models &mdash; HuBERT-base (768-dim), Whisper-small (768-dim), and
+      Wav2Vec2 XLS-R 1B (1280-dim) &mdash; are concatenated to form 2816-dim representations.
+    </p>
+
+    <h3>t-SNE &mdash; All Three Models Compared</h3>
+    <figure>
+      <img src="plots/ssl_tsne_comparison.png" alt="t-SNE comparison across HuBERT, Whisper, and Wav2Vec2">
+      <figcaption>t-SNE projections across all three SSL models. Each point is one utterance,
+        colored by intervention depth class. Voice-converted classes overlap substantially,
+        while Real and Fake clusters remain well-separated.</figcaption>
+    </figure>
+
+    <h3>PCA &mdash; All Three Models Compared</h3>
+    <figure>
+      <img src="plots/ssl_pca_comparison.png" alt="PCA comparison across HuBERT, Whisper, and Wav2Vec2">
+      <figcaption>PCA projections (first two principal components) across all three SSL models.</figcaption>
+    </figure>
+
+    <h3>Individual t-SNE Projections</h3>
+
+    <figure>
+      <img src="plots/hubert_tsne.png" alt="HuBERT t-SNE">
+      <figcaption>HuBERT-base (facebook/hubert-base-ls960) &mdash; 768-dim embeddings.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="plots/whisper_tsne.png" alt="Whisper t-SNE">
+      <figcaption>Whisper-small (openai/whisper-small) &mdash; 768-dim embeddings.</figcaption>
+    </figure>
+
+    <figure>
+      <img src="plots/wav2vec2_tsne.png" alt="Wav2Vec2 XLS-R 1B t-SNE">
+      <figcaption>Wav2Vec2 XLS-R 1B (facebook/wav2vec2-xls-r-1b) &mdash; 1280-dim embeddings.</figcaption>
+    </figure>
   </div>
 </section>
 
